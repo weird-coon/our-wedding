@@ -1,10 +1,110 @@
+'use client'
+
 import Image from 'next/image'
+import gsap from 'gsap'
+import { useGSAP } from '@gsap/react'
+import { useRef } from 'react'
 
 export default function Home() {
-  console.log('hooooo', process.env.MOCK_PRIVATE_KEY!)
+  const cursorRef = useRef<HTMLElement | any>()
+
+  useGSAP(
+    () => {
+      const isTouchDevice = 'ontouchstart' in window
+      const cursor = cursorRef.current
+      // If device is touchable or cursor element
+      // doesn't exist, stop here
+      if (isTouchDevice || !cursor) {
+        return
+      }
+
+      let isVisible = false
+      let scaleAnim: gsap.core.Timeline = gsap.timeline({ paused: true })
+
+      const handleMouseMove = (e: MouseEvent) => {
+        if (!isVisible) {
+          gsap.set('.cursor-outline, .cursor-dot', { opacity: 1 })
+          isVisible = true
+        }
+        const { target } = e
+        // check if the mouse cursor is over some link or button
+        const isTargetLinkOrBtn =
+          (target as Element)?.closest('a') ||
+          (target as Element)?.closest('button')
+
+        gsap.set('.cursor-dot', {
+          scale: isTargetLinkOrBtn ? 0.9 : 0.1,
+          opacity: isTargetLinkOrBtn ? 0.3 : 1,
+        })
+        gsap.set('.cursor-outline', {
+          scale: 0.5,
+          opacity: isTargetLinkOrBtn ? 0 : 1,
+        })
+        scaleAnim
+          .to('.cursor-outline', {
+            scale: 1,
+          })
+          .to(
+            '.cursor-dot',
+            {
+              scale: 1,
+              duration: 0.35,
+            },
+            0,
+          )
+
+        const cursorPosition = {
+          left: e.clientX,
+          top: e.clientY,
+        }
+        const xCTo: (value: number) => void = gsap.quickTo(
+          '.cursor-outline',
+          'left',
+          {
+            duration: 0.2,
+            ease: 'power3',
+          },
+        )
+        const yCTo: (value: number) => void = gsap.quickTo(
+          '.cursor-outline',
+          'top',
+          {
+            duration: 0.2,
+            ease: 'power3',
+          },
+        )
+        const xDTo: (value: number) => void = gsap.quickTo(
+          '.cursor-dot',
+          'left',
+          {
+            duration: 0.6,
+            ease: 'power3',
+          },
+        )
+        const yDTo: (value: number) => void = gsap.quickTo(
+          '.cursor-dot',
+          'top',
+          {
+            duration: 0.6,
+            ease: 'power3',
+          },
+        )
+        xCTo(cursorPosition.left)
+        yCTo(cursorPosition.top)
+        xDTo(cursorPosition.left)
+        yDTo(cursorPosition.top)
+      }
+
+      document.addEventListener('mousemove', handleMouseMove)
+    },
+    { scope: cursorRef },
+  )
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
+    <main
+      ref={cursorRef}
+      className="main flex min-h-screen flex-col items-center justify-between p-24"
+    >
       <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
         <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
           Get started by editing&nbsp;
@@ -110,6 +210,9 @@ export default function Home() {
           </p>
         </a>
       </div>
+
+      <div className="cursor-outline"></div>
+      <div className="cursor-dot"></div>
     </main>
   )
 }
